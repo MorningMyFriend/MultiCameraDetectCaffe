@@ -38,15 +38,16 @@ public:
     Mat pointFilter(Mat gray);
     Mat imgMog2(Mat img1, Mat img2);
 
-    bool isDynamicDetection(cv::Rect box, Mat mask, float scaleThresh=0.1);
+    bool isDynamicDetection(cv::Rect box, Mat mask, float scaleThresh=0.001);
     bool isDynamicCamera(Mat imgBefore, Mat imgAfter, float scaleThresh=0.01);
 
     vector<Detection> detectionBkgFilt(vector<Detection> &detections, vector<Detection> &detectionsNew, Mat mask);
+    vector<int> detectionInBkg(vector<Detection> &detections, Mat mask);
     void addDynamicDetections(Mat imgBefore, Mat imgAfter,
                                vector<Detection> &detectionBefore, vector<Detection> &detectionAfter);
 
     float getIOU(cv::Rect box1, cv::Rect box2);
-    void deleteBoxLowIouInBkg(vector<Detector> &detectionsB, vector<Detection> &detectionsA);
+    float isMatch(Detection detection1, Detection detection2, float iouThresh);
     void addDetectionsWithoutWrongBoxInBkg(Mat imgBefore,Mat imgAfter, vector<Detection> &detectionBefor, vector<Detection> &detectionAfter);
 
 };

@@ -75,9 +75,9 @@ Mat imgprocess::imgDiff2(Mat framepro, Mat frame) {
     // 膨胀腐蚀
     gray = dframe.clone();
     dilate(gray, gray, Mat(),Point(-1,-1), 3);
-    erode(gray, gray, Mat(),Point(-1,-1), 3);
+    erode(gray, gray, Mat(),Point(-1,-1), 1);
     //过滤离群点
-    Mat kernel = getStructuringElement(MORPH_RECT, Size(5,5));
+    Mat kernel = getStructuringElement(MORPH_RECT, Size(10,10));
     morphologyEx(gray,gray, MORPH_OPEN, kernel, Point(-1,-1));
     return gray;
 }
@@ -114,7 +114,7 @@ bool imgprocess::isDynamicDetection(cv::Rect box, Mat mask, float scaleThresh) {
     if(ratioBox<scaleThresh){
         return false;
     }
-    cout<< " ratioBox = "<< ratioBox<<"======================"<<endl;
+//    cout<< " ratioBox = "<< ratioBox<<"======================"<<endl;
     return true;
 }
 
@@ -158,6 +158,20 @@ vector<Detection> imgprocess::detectionBkgFilt(vector<Detection> &detections, ve
     return DynamicDetection;
 }
 
+vector<int> imgprocess::detectionInBkg(vector<Detection> &detections, Mat mask) {
+    cout<<"detectionInBkg  start"<<endl;
+    vector<int> BkgDetectionIndex;
+    for (int i = 0; i < detections.size(); ++i) {
+        if (!isDynamicDetection(detections[i].getRect(), mask)){
+            BkgDetectionIndex.push_back(i);
+        } else{
+            continue;
+        }
+    }
+    cout << "detectionInBkg end"<<endl;
+    return BkgDetectionIndex;
+}
+
 void imgprocess::addDynamicDetections(Mat imgBefore, Mat imgAfter, vector<Detection> &detectionBefore,
                                        vector<Detection> &detectionAfter) {
     // detect images
@@ -189,7 +203,6 @@ void imgprocess::addDynamicDetections(Mat imgBefore, Mat imgAfter, vector<Detect
     imwrite("/home/wurui/Desktop/fugui/debugdynameicB"+std::to_string(frameNum)+".jpg", img1);
     imwrite("/home/wurui/Desktop/fugui/debugdynamicA"+std::to_string(frameNum)+".jpg", img2);
     imwrite("/home/wurui/Desktop/fugui/maskFilter"+std::to_string(frameNum)+".jpg", mask);
-    frameNum++;
     waitKey(50);
 }
 
@@ -203,12 +216,140 @@ float imgprocess::getIOU(cv::Rect box1, cv::Rect box2) {
     return iou;
 }
 
-void imgprocess::deleteBoxLowIouInBkg(vector<Detector> &detectionsB, vector<Detection> &detectionsA) {
-    vector<int> indexB;// 待删除的编号
-    vector<int> indexA;
-    vector<Detection> boxB; boxB.assign(detectionsB.begin(), detectionsB.end());
-    vector<Detection> boxA; boxA.assign(detectionsA.begin(), detectionsA.end());
-    for (int i = 0; i < ; ++i) {
-
+float imgprocess::isMatch(Detection detection1, Detection detection2, float iouThresh) {
+    cout<< " class name: " << detection1.getClass() << detection2.getClass()<<endl;
+    if (detection1.getClass()!=detection2.getClass()) {
+        cout << "class name 不等" << endl;
+        return 0;
     }
+    float iou = getIOU(detection1.getRect(), detection2.getRect());
+    if (iou<iouThresh)
+        return 0;
+    cout<< " iou == " << iou << endl;
+    return iou;
+}
+
+void imgprocess::addDetectionsWithoutWrongBoxInBkg(Mat imgBefore, Mat imgAfter, vector<Detection> &detectionBefor,
+                                                   vector<Detection> &detectionAfter) {
+    // detect images
+    vector<Detection> resultBefore = tmp_detector.detect(imgBefore,0.7,0.4);
+    vector<Detection> resultAfter = tmp_detector.detect(imgAfter,0.7,0.4);
+
+    Mat img10 = imgBefore.clone();
+    Mat img20 = imgAfter.clone();
+    tmp_detector.drawBox(img10,resultBefore);
+    tmp_detector.drawBox(img20,resultAfter);
+    Size dsize = Size(720, 480);
+    resize(img10, img10, dsize);
+    resize(img20, img20, dsize);
+    imwrite("/home/wurui/Desktop/fugui/test/resultBefore"+std::to_string(frameNum)+".jpg", img10);
+    imwrite("/home/wurui/Desktop/fugui/test/resultAfter"+std::to_string(frameNum)+".jpg", img20);
+
+    // 寻找在bkg中的box: 在result中的序号
+    cout<< "寻找在bkg中的box: 在result中的序号" << endl;
+    vector<int> BkgIndexBefore = detectionInBkg(resultBefore, maskTmp);
+    vector<int> BkgIndexAfter = detectionInBkg(resultAfter, maskTmp);
+
+    // debug 画出在bkg中的box
+    vector<Detection> boxBkgB;
+    vector<Detection> boxBkgA;
+    for (int i = 0; i < BkgIndexBefore.size(); ++i) {
+        boxBkgB.push_back(resultBefore[BkgIndexBefore[i]]);
+    }
+    for (int i = 0; i < BkgIndexAfter.size(); ++i) {
+        boxBkgA.push_back(resultAfter[BkgIndexAfter[i]]);
+    }
+    Mat img1 = imgBefore.clone();
+    Mat img2 = imgAfter.clone();
+    Mat mask = maskTmp.clone();
+    tmp_detector.drawBox(img1,boxBkgB);
+    tmp_detector.drawBox(img2,boxBkgA);
+    resize(img1, img1, dsize);
+    resize(img2, img2, dsize);
+    resize(mask, mask, dsize);
+    imwrite("/home/wurui/Desktop/fugui/test/boxBkgBefore"+std::to_string(frameNum)+".jpg", img1);
+    imwrite("/home/wurui/Desktop/fugui/test/boxBkgAfter"+std::to_string(frameNum)+".jpg", img2);
+    imwrite("/home/wurui/Desktop/fugui/test/maskFilter"+std::to_string(frameNum)+".jpg", mask);
+
+
+    // iou 匹配, 去除配对失败且在bkg中的box
+    float iouThresh = 0.4;
+    // 配对成功后的detectionInBkg的标识为true
+    map<int,bool> index_match_B;// <在result中的序号， 匹配标志>
+    map<int,bool> index_match_A;
+    for (int k = 0; k < BkgIndexBefore.size(); ++k) {
+        index_match_B.insert(std::pair<int,bool>(BkgIndexBefore[k], false));
+    }
+    for (int k = 0; k < BkgIndexAfter.size(); ++k) {
+        index_match_A.insert(std::pair<int,bool>(BkgIndexAfter[k], false));
+    }
+    for (int i = 0; i < BkgIndexBefore.size(); ++i) {
+        if(index_match_B[BkgIndexBefore[i]]) continue; // 已配对过的detection跳过
+        // 寻找iou最大的同名box
+        int indexMatch = -1;
+        float maxIOU = 0;
+        for (int j = 0; j < BkgIndexAfter.size(); ++j) {
+            if(index_match_A[BkgIndexAfter[j]]) continue; // 已配对过的detection跳过
+            float iouTemp = isMatch(resultBefore[BkgIndexBefore[i]], resultAfter[BkgIndexAfter[j]],iouThresh);
+            cout<< "iouTmp = " << iouTemp<<"  maxIOU = " << maxIOU <<endl;
+            if(iouTemp>=maxIOU){
+                maxIOU = iouTemp;
+                indexMatch = j;
+                cout<< "indexMatch j ="<<indexMatch<<endl;
+            }
+        }
+
+        if (indexMatch>-1 && maxIOU>0){
+            // 配对成功
+            cout << " 配对成功: iou = " << maxIOU<<endl;
+            index_match_B[BkgIndexBefore[i]]= true;
+            index_match_A[BkgIndexAfter[indexMatch]] = true;
+        }
+    }
+    vector<Detection> boxNotMatchB;
+    vector<Detection> boxNotMatchA;
+    for (int i = 0; i < resultBefore.size(); ++i) {
+        // 先判断 i 是否在 index_match_B 中
+        bool isContain=false;
+        for (int j = 0; j < BkgIndexBefore.size(); ++j) {
+            if (i==BkgIndexBefore[j]) isContain = true;
+        }
+        if (isContain){
+            if (!index_match_B[i]) {
+                boxNotMatchB.push_back(resultBefore[i]);
+                continue;
+            }
+        }
+        detectionBefor.push_back(resultBefore[i]);
+    }
+    for (int i = 0; i < resultAfter.size(); ++i) {
+        bool isContain=false;
+        for (int j = 0; j < BkgIndexAfter.size(); ++j) {
+            if (i==BkgIndexAfter[j]) isContain = true;
+        }
+        if(isContain){
+            if (!index_match_A[i]) {
+                boxNotMatchA.push_back(resultAfter[i]);
+                continue;
+            }
+        }
+        detectionAfter.push_back(resultAfter[i]);
+    }
+//    for (int i = 0; i < index_match_B.size(); ++i) {
+//        boxNotMatchB.push_back(resultBefore[index_match_B[i]]);
+//    }
+//    for (int i = 0; i < index_match_A.size(); ++i) {
+//        boxNotMatchA.push_back(resultAfter[index_match_A[i]]);
+//    }
+
+    // debug 画出匹配失败的box
+    Mat img11 = imgBefore.clone();
+    Mat img22 = imgAfter.clone();
+    tmp_detector.drawBox(img11,boxNotMatchB);
+    tmp_detector.drawBox(img22,boxNotMatchA);
+    resize(img11, img11, dsize);
+    resize(img22, img22, dsize);
+    imwrite("/home/wurui/Desktop/fugui/test/boxNotMatchBefore"+std::to_string(frameNum)+".jpg", img11);
+    imwrite("/home/wurui/Desktop/fugui/test/boxNotMatchAfter"+std::to_string(frameNum)+".jpg", img22);
+    frameNum++;
 }
