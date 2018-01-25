@@ -1,0 +1,10 @@
+/home/wurui/project/fugui/IntelligentCabinet/build/CMakeFiles/edit_cache.dir
+/home/wurui/project/fugui/IntelligentCabinet/build/CMakeFiles/rebuild_cache.dir
+/home/wurui/project/fugui/IntelligentCabinet/build/src/CMakeFiles/edit_cache.dir
+/home/wurui/project/fugui/IntelligentCabinet/build/src/CMakeFiles/rebuild_cache.dir
+/home/wurui/project/fugui/IntelligentCabinet/build/src/CMakeFiles/intelligentCabinetTools.dir
+/home/wurui/project/fugui/IntelligentCabinet/build/tests/CMakeFiles/test_detect.dir
+/home/wurui/project/fugui/IntelligentCabinet/build/tests/CMakeFiles/edit_cache.dir
+/home/wurui/project/fugui/IntelligentCabinet/build/tests/CMakeFiles/skuDetect.dir
+/home/wurui/project/fugui/IntelligentCabinet/build/tests/CMakeFiles/rebuild_cache.dir
+/home/wurui/project/fugui/IntelligentCabinet/build/tests/CMakeFiles/cameraDetect.dir
