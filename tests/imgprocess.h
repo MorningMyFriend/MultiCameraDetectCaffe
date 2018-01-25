@@ -10,6 +10,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include "detector.h"
 #include "detection.h"
+#include "math.h"
 
 using namespace std;
 using namespace cv;
@@ -37,12 +38,16 @@ public:
     Mat pointFilter(Mat gray);
     Mat imgMog2(Mat img1, Mat img2);
 
-    bool isDynamicDetection(cv::Rect box, Mat mask, float scaleThresh=0.01);
+    bool isDynamicDetection(cv::Rect box, Mat mask, float scaleThresh=0.1);
     bool isDynamicCamera(Mat imgBefore, Mat imgAfter, float scaleThresh=0.01);
 
     vector<Detection> detectionBkgFilt(vector<Detection> &detections, vector<Detection> &detectionsNew, Mat mask);
     void addDynamicDetections(Mat imgBefore, Mat imgAfter,
                                vector<Detection> &detectionBefore, vector<Detection> &detectionAfter);
+
+    float getIOU(cv::Rect box1, cv::Rect box2);
+    void deleteBoxLowIouInBkg(vector<Detector> &detectionsB, vector<Detection> &detectionsA);
+    void addDetectionsWithoutWrongBoxInBkg(Mat imgBefore,Mat imgAfter, vector<Detection> &detectionBefor, vector<Detection> &detectionAfter);
 
 };
 

@@ -114,6 +114,7 @@ bool imgprocess::isDynamicDetection(cv::Rect box, Mat mask, float scaleThresh) {
     if(ratioBox<scaleThresh){
         return false;
     }
+    cout<< " ratioBox = "<< ratioBox<<"======================"<<endl;
     return true;
 }
 
@@ -147,6 +148,7 @@ vector<Detection> imgprocess::detectionBkgFilt(vector<Detection> &detections, ve
     vector<Detection> DynamicDetection;
     for (int i = 0; i < detections.size(); ++i) {
         if(isDynamicDetection(detections[i].getRect(), mask)){
+            cout << " dynamic box :"<< detections[i].getClass() << endl;
             detectionsNew.push_back(detections[i]);
             DynamicDetection.push_back(detections[i]);
         } else{
@@ -186,7 +188,27 @@ void imgprocess::addDynamicDetections(Mat imgBefore, Mat imgAfter, vector<Detect
     imwrite("/home/wurui/Desktop/fugui/debugA"+std::to_string(frameNum)+".jpg", imgAfter);
     imwrite("/home/wurui/Desktop/fugui/debugdynameicB"+std::to_string(frameNum)+".jpg", img1);
     imwrite("/home/wurui/Desktop/fugui/debugdynamicA"+std::to_string(frameNum)+".jpg", img2);
-    imwrite("/home/wurui/Desktop/fugui/mask"+std::to_string(frameNum)+".jpg", mask);
+    imwrite("/home/wurui/Desktop/fugui/maskFilter"+std::to_string(frameNum)+".jpg", mask);
     frameNum++;
     waitKey(50);
+}
+
+float imgprocess::getIOU(cv::Rect box1, cv::Rect box2) {
+    int w = max(box1.x+box1.width, box2.x+box2.width) - min(box1.x, box2.x);
+    int h = max(box1.y+box1.height, box2.y+box2.height) - min(box1.y, box2.y);
+    if((box1.width+box2.width-w)<=0 || (box1.height+box2.height-h)<=0)
+        return 0;
+    float area = (float)((box1.width+box2.width-w)*(box1.height+box2.height-h));
+    float iou = area/(float)(box1.width*box1.height + box2.height*box2.width - area);
+    return iou;
+}
+
+void imgprocess::deleteBoxLowIouInBkg(vector<Detector> &detectionsB, vector<Detection> &detectionsA) {
+    vector<int> indexB;// 待删除的编号
+    vector<int> indexA;
+    vector<Detection> boxB; boxB.assign(detectionsB.begin(), detectionsB.end());
+    vector<Detection> boxA; boxA.assign(detectionsA.begin(), detectionsA.end());
+    for (int i = 0; i < ; ++i) {
+
+    }
 }
