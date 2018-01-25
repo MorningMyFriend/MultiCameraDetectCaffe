@@ -96,7 +96,7 @@ map<string,int> skuDetect2(vector<Mat> imgs){
     for (int i = 0; i < cameraNum; ++i) {
         cout << " i== " << i << " img size: " << imgs[2 * i + 1].size << " imgs nums = " << imgs.size() << endl;
         if (imgprocess::getInstance()->isDynamicCamera(imgs[2 * i], imgs[2 * i + 1])) {
-            imgprocess::getInstance()->addDetectionsWithoutWrongBoxInBkg(imgs[2 * i], imgs[2 * i + 1], DetectionsBefore,
+            imgprocess::getInstance()->addDetectionsWithoutWrongBoxInBkg2(imgs[2 * i], imgs[2 * i + 1], DetectionsBefore,
                                                                          DetectionsAfter);
         }
     }
@@ -128,7 +128,7 @@ map<string,int> skuDetect2(vector<Mat> imgs){
 int main(){
     // 一次传输 2n 张图像；n 个相机
     vector<Mat> imgs;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 6; i < 8; i++) {
         Mat img=imread("/home/wurui/Desktop/fugui/shot/test/shot"+std::to_string(i)+".png");
         imgs.push_back(img);
     }

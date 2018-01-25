@@ -43,12 +43,16 @@ public:
 
     vector<Detection> detectionBkgFilt(vector<Detection> &detections, vector<Detection> &detectionsNew, Mat mask);
     vector<int> detectionInBkg(vector<Detection> &detections, Mat mask);
+    vector<int> detectionInFor(vector<Detection> &detections, Mat mask);
     void addDynamicDetections(Mat imgBefore, Mat imgAfter,
                                vector<Detection> &detectionBefore, vector<Detection> &detectionAfter);
+
+    vector<Detection> deleteBoxHighIOU(vector<Detection> detections, float iouThresh);
 
     float getIOU(cv::Rect box1, cv::Rect box2);
     float isMatch(Detection detection1, Detection detection2, float iouThresh);
     void addDetectionsWithoutWrongBoxInBkg(Mat imgBefore,Mat imgAfter, vector<Detection> &detectionBefor, vector<Detection> &detectionAfter);
+    void addDetectionsWithoutWrongBoxInBkg2(Mat imgBefore,Mat imgAfter, vector<Detection> &detectionBefor, vector<Detection> &detectionAfter);
 
 };
 
