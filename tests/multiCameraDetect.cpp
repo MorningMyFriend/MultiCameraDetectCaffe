@@ -17,8 +17,94 @@
 #include <map>
 #include "imgprocess.h"
 #include <map>
+#include "pthread.h"
 
 using namespace std;
+
+
+bool isShot = false;
+pthread_mutex_t lock;
+
+
+struct threadParam {
+    int threadId;
+    vector<Mat> frames;
+};
+
+void *threadFrameShot(void *param) {
+    threadParam *frames = (threadParam *) param;
+    int id = frames->threadId;
+    cout << "thread id : " << frames->threadId << endl;
+    cout<<"frames num:"<<frames->frames.size()<<endl;
+
+    // detect video shot
+    string videoPath = "/home/wurui/Desktop/fugui/data/test"+std::to_string(id)+".avi";
+    cv::VideoCapture mycap(videoPath);
+    if (mycap.isOpened()) {
+        cout << " video ok " << endl;
+    }
+    int shotCount = 0;
+    while (1) {
+        cv::Mat img;
+        mycap >> img;
+        cout<<"thread "<<id<<" img size"<< img.size<<endl;
+        sleep(0.001);
+        cv::imshow("video"+std::to_string(id), img);
+        imwrite("/home/wurui/Desktop/"+std::to_string(id)+".png",img);
+        cv::waitKey(0);
+        if(isShot) {
+            frames->frames.push_back(img);
+            shotCount++;
+        }
+        if (shotCount==1) break;
+        sleep(0.01);
+    }
+}
+
+vector<Mat> multiCameraDetect(){
+    pthread_t ps[2];
+    pthread_mutex_init(&lock,NULL);
+    int camNum =2;
+    vector<Mat> frame1;
+    vector<Mat> frame2;
+
+    for (int i = 0; i < 2; ++i) {
+        pthread_t p;
+        ps[i] = p;
+        threadParam param;
+        switch (i){
+            case 0:
+                param.frames = frame1;
+                break;
+            case 1:
+                param.frames = frame2;
+                break;
+        }
+        param.threadId = i;
+        pthread_create(&ps[i],NULL,threadFrameShot,&param);
+    }
+    int num=0;
+    while(1){
+        cout<<"main thread"<<endl;
+        waitKey(10);
+        int key = cv::waitKey(10);
+        if (key > 0) {
+            isShot = true;
+            cout<<"main: isShot = true"<<endl;
+            num++;
+        }
+        if(num==1) break;
+        sleep(0.1);
+        isShot=false;
+        cout<<"main: isShot = false"<<endl;
+    }
+    cout<<"frame num:"<<frame1.size()<<" "<<frame2.size()<<endl;
+    vector<Mat> frames;
+    frames.push_back(frame1[0]);
+    frames.push_back(frame1[1]);
+    frames.push_back(frame2[0]);
+    frames.push_back(frame2[1]);
+}
 
 map<string,int> skuDetect1(vector<Mat> imgs){
     // vector<Mat> imgs = { cam_1_before cam_1_after cam_2_before cam_2 after ...}
@@ -39,21 +125,6 @@ map<string,int> skuDetect1(vector<Mat> imgs){
             imshow("input", imgs[2*i+1]);
             waitKey(30);
             imgprocess::getInstance()->addDynamicDetections(imgs[2*i],imgs[2*i+1],DetectionsBefore,DetectionsAfter);
-
-            // 储存可视化结果
-//            Size dsize = Size(720, 480);
-//            imgprocess::getInstance()->tmp_detector.drawBox(imgs[2*i], DetectionsBefore);
-//            imgprocess::getInstance()->tmp_detector.drawBox(imgs[2*i+1], DetectionsAfter);
-//            resize(imgs[2*i],imgs[2*i],dsize);
-//            resize(imgs[2*i+1],imgs[2*i+1],dsize);
-//            cout << " mask =="<<endl;
-//            resize(imgprocess::getInstance()->maskTmp,imgprocess::getInstance()->maskTmp,dsize);
-//            imwrite("/home/wurui/Desktop/fugui/beforeDynamic"+std::to_string(i)+".jpg", imgs[2*i]);
-//            imwrite("/home/wurui/Desktop/fugui/afterDynamic"+std::to_string(i)+".jpg", imgs[2*i+1]);
-//            imwrite("/home/wurui/Desktop/fugui/maskDynamic"+std::to_string(i)+".jpg", imgprocess::getInstance()->maskTmp);
-//            imshow("before", imgs[2*i]);
-//            imshow("after", imgs[2*i]+1);
-//            imshow("mask", imgprocess::getInstance()->maskTmp);
         }
 
     }
@@ -124,18 +195,51 @@ map<string,int> skuDetect2(vector<Mat> imgs){
     }
 };
 
+//int main(){
+//    vector<Mat> images = multiCameraDetect();
+//}
 
 int main(){
     // 一次传输 2n 张图像；n 个相机
     vector<Mat> imgs;
-//    for (int i = 7; i < 9; i++) {
-//        Mat img=imread("/home/wurui/Desktop/fugui/shot/test/shot"+std::to_string(i)+".png");
-//        imgs.push_back(img);
-//    }
-    Mat img1 = imread("/home/wurui/Desktop/fugui/shot/test/shot10.png");
-    Mat img2 = imread("/home/wurui/Desktop/fugui/shot/test/shot12.png");
-    imgs.push_back(img1);
-    imgs.push_back(img2);
+    vector<Mat> imgs1;
+    vector<Mat> imgs2;
+//    Mat img1 = imread("/home/wurui/Desktop/fugui/shot/test/shot10.png");
+//    Mat img2 = imread("/home/wurui/Desktop/fugui/shot/test/shot12.png");
+//    imgs.push_back(img1);
+//    imgs.push_back(img2);
+    // detect video shot
+    string videoPath1 = "/home/wurui/Desktop/fugui/data/test0.avi";
+    string videoPath2 = "/home/wurui/Desktop/fugui/data/test1.avi";
+    cv::VideoCapture mycap1(videoPath1);
+    cv::VideoCapture mycap2(videoPath2);
+    if (mycap1.isOpened() && mycap2.isOpened()){
+        cout << " video ok "<< endl;
+    }
+
+    int shotCount = 0;
+    while (1) {
+        if (shotCount>1) break;
+        cv::Mat img1,img2;
+        mycap1 >> img1;
+        mycap2 >> img2;
+        cv::imshow("video1", img1);
+        cv::imshow("video2", img2);
+        cv::waitKey(50);
+        int key = cv::waitKey(50);
+        if (key > 0) {
+            imgs1.push_back(img1);
+            imgs2.push_back(img2);
+            shotCount++;
+            cout << shotCount << " shot count " << endl;
+        }
+    }
+    imgs.push_back(imgs1[0]);
+    imgs.push_back(imgs1[1]);
+    imgs.push_back(imgs2[0]);
+    imgs.push_back(imgs2[1]);
+    cout<< "===================detect start==================="<<endl;
+
     // 入口
     string label_file = "/home/wurui/Desktop/fugui/FUGUI/predefined_classes.txt";
     string net_prototxt = "/home/wurui/Desktop/fugui/FUGUI/test.prototxt";

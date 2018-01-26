@@ -8,5 +8,5 @@ target_link_libraries(skuDetect
 
 add_executable(cameraDetect  imgprocess.cpp imgprocess.h multiCameraDetect.cpp)
 target_link_libraries(cameraDetect
-        intelligentCabinetTools)
+        intelligentCabinetTools -lpthread)
 
