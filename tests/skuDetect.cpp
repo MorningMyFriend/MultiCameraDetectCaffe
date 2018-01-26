@@ -21,7 +21,7 @@
 
 using namespace std;
 
-int main(){
+void detect(){
     //    // sku class
     vector<string> skuName; //= {"cola","xuebi","weitaNingmeng","zhenguoli_blue","zhenguoli_red","redbull","chapi","kangshifu","laotangsuancai","tangdaren","heweidao" };
     map<string,int> skuBefore;
@@ -57,28 +57,32 @@ int main(){
         resize(img, img, dsize);
         imwrite("/home/wurui/Desktop/fugui/shot/test/result"+std::to_string(i)+".png",img);
     }
+}
 
+void videoShot(){
+    // detect video shot
+    string videoPath = "/home/wurui/Desktop/fugui/data/test4.avi";
+    cv::VideoCapture mycap(videoPath);
+    if (mycap.isOpened()){
+        cout << " video ok "<< endl;
+    }
 
-//        // detect video shot
-//    string videoPath = "/home/wurui/Desktop/fugui/FUGUI/test2.avi";
-//    cv::VideoCapture mycap(videoPath);
-//    if (mycap.isOpened()){
-//        cout << " video ok "<< endl;
-//    }
-//
-//    int shotCount = 0;
-//    while (1) {
-//        cv::Mat img;
-//        mycap >> img;
-//        cv::imshow("video", img);
-//        cv::waitKey(10);
-//        int key = cv::waitKey(10);
-//        if (key > 0) {
-//            cv::imwrite("/home/wurui/Desktop/fugui/shot/test/shot5.png" + std::to_string(shotCount) + ".png", img);
-//            shotCount++;
-//            cout << shotCount << " shot count " << endl;
-//        }
-//    }
+    int shotCount = 0;
+    while (1) {
+        cv::Mat img;
+        mycap >> img;
+        cv::imshow("video", img);
+        cv::waitKey(50);
+        int key = cv::waitKey(50);
+        if (key > 0) {
+            cv::imwrite("/home/wurui/Desktop/fugui/shot/test4/shot" + std::to_string(shotCount) + ".png", img);
+            shotCount++;
+            cout << shotCount << " shot count " << endl;
+        }
+    }
+}
+int main(){
+    videoShot();
     cout<< "no thing to do"<<endl;
 }
 //

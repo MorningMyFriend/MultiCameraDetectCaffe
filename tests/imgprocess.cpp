@@ -261,7 +261,7 @@ void imgprocess::addDetectionsWithoutWrongBoxInBkg(Mat imgBefore, Mat imgAfter, 
     imwrite("/home/wurui/Desktop/fugui/test/resultAfter"+std::to_string(frameNum)+".jpg", img20);
 
     // 寻找在bkg中的box: 在result中的序号
-    cout<< "寻找在bkg中的box: 在result中的序号" << endl;
+//    cout<< "寻找在bkg中的box: 在result中的序号" << endl;
     vector<int> BkgIndexBefore = detectionInBkg(resultBefore, maskTmp);
     vector<int> BkgIndexAfter = detectionInBkg(resultAfter, maskTmp);
 
@@ -298,29 +298,33 @@ void imgprocess::addDetectionsWithoutWrongBoxInBkg(Mat imgBefore, Mat imgAfter, 
     for (int k = 0; k < BkgIndexAfter.size(); ++k) {
         index_match_A.insert(std::pair<int,bool>(BkgIndexAfter[k], false));
     }
+    int num = 0;
     for (int i = 0; i < BkgIndexBefore.size(); ++i) {
         if(index_match_B[BkgIndexBefore[i]]) continue; // 已配对过的detection跳过
         // 寻找iou最大的同名box
         int indexMatch = -1;
         float maxIOU = 0;
+
         for (int j = 0; j < BkgIndexAfter.size(); ++j) {
             if(index_match_A[BkgIndexAfter[j]]) continue; // 已配对过的detection跳过
             float iouTemp = isMatch(resultBefore[BkgIndexBefore[i]], resultAfter[BkgIndexAfter[j]],iouThresh);
-            cout<< "iouTmp = " << iouTemp<<"  maxIOU = " << maxIOU <<endl;
+//            cout<< "iouTmp = " << iouTemp<<"  maxIOU = " << maxIOU <<endl;
             if(iouTemp>=maxIOU){
                 maxIOU = iouTemp;
                 indexMatch = j;
-                cout<< "indexMatch j ="<<indexMatch<<endl;
+//                cout<< "indexMatch j ="<<indexMatch<<endl;
             }
         }
 
         if (indexMatch>-1 && maxIOU>0){
             // 配对成功
-            cout << " 配对成功: iou = " << maxIOU<<endl;
+            num++;
+//            cout << " 配对成功: iou = " << maxIOU<<endl;
             index_match_B[BkgIndexBefore[i]]= true;
             index_match_A[BkgIndexAfter[indexMatch]] = true;
         }
     }
+    cout << " 配对成功: 数量 = " << num<<endl;
     vector<Detection> boxNotMatchB;
     vector<Detection> boxNotMatchA;
     for (int i = 0; i < resultBefore.size(); ++i) {
@@ -374,6 +378,7 @@ void imgprocess::addDetectionsWithoutWrongBoxInBkg2(Mat imgBefore, Mat imgAfter,
     // detect images
     vector<Detection> resultBefore0 = tmp_detector.detect(imgBefore,0.7,0.4);
     vector<Detection> resultAfter0 = tmp_detector.detect(imgAfter,0.7,0.4);
+    cout<< " 检测到目标数量 before:"<< resultBefore0.size() << " after:"<<resultAfter0.size()<<endl;
     // debug 画所有检测box
     Mat img10 = imgBefore.clone();
     Mat img20 = imgAfter.clone();
@@ -405,7 +410,9 @@ void imgprocess::addDetectionsWithoutWrongBoxInBkg2(Mat imgBefore, Mat imgAfter,
 
 
     // iou 匹配, 去除配对失败且在bkg中的box
-    float iouThresh = 0.6;
+    // 注意：iou匹配时不同名字之间的box不能匹配: 雪碧挡住营养快线，拿走雪碧， 会把雪碧和营养快线匹配，留下被遮挡的营养快线，而被遮挡的营养快线不在变化区，统计出错
+    //      iou同类匹配剩下的box，完全在背景里的是误检测
+    float iouThresh = 0.2;
     // 配对成功后的detectionInBkg的标识为true
     map<int,bool> index_match_B;// <在result中的序号， 匹配标志>
     map<int,bool> index_match_A;
@@ -415,6 +422,7 @@ void imgprocess::addDetectionsWithoutWrongBoxInBkg2(Mat imgBefore, Mat imgAfter,
     for (int k = 0; k < resultAfter.size(); ++k) {
         index_match_A.insert(std::pair<int,bool>(k, false));
     }
+    int num=0;
     for (int i = 0; i < resultBefore.size(); ++i) {
         if(index_match_B[i]) continue; // 已配对过的detection跳过
         // 寻找iou最大的同名box
@@ -431,13 +439,16 @@ void imgprocess::addDetectionsWithoutWrongBoxInBkg2(Mat imgBefore, Mat imgAfter,
             }
         }
 
+//        cout<<"MaxIOU = "<<maxIOU<<endl;
         if (indexMatch>-1 && maxIOU>0){
             // 配对成功
-//            cout << " 配对成功: iou = " << maxIOU<<endl;
+            num++;
+//            cout << " 配对成功: iou = " << maxIOU<<" before index: "<<i<<" after index: "<< indexMatch <<endl;
             index_match_B[i]= true;
             index_match_A[indexMatch] = true;
         }
     }
+    cout<<"配对成功数量： "<<num<< endl;
     vector<Detection> boxNotMatchB;
     vector<Detection> boxNotMatchA;
     for (int i = 0; i < resultBefore.size(); ++i) {
@@ -449,7 +460,7 @@ void imgprocess::addDetectionsWithoutWrongBoxInBkg2(Mat imgBefore, Mat imgAfter,
     }
     for (int i = 0; i < resultAfter.size(); ++i) {
         if(!index_match_A[i]) {
-            detectionAfter.push_back(resultAfter[i]);
+            boxNotMatchA.push_back(resultAfter[i]);
             continue;
         }
 //        detectionAfter.push_back(resultAfter[i]);//匹配成功的都加入result
@@ -466,7 +477,7 @@ void imgprocess::addDetectionsWithoutWrongBoxInBkg2(Mat imgBefore, Mat imgAfter,
 
     // 在匹配失败的box中： 属于变化区域的，加入result中 等待sku统计; 属于背景区域的 当作虚检忽略
     // 寻找在变化区中的box: 在result中的序号
-    cout<< "匹配失败的box中寻找在变化区中的box" << endl;
+//    cout<< "匹配失败的box中寻找在变化区中的box" << endl;
     vector<int> IndexBefore = detectionInFor(resultBefore, maskTmp);
     vector<int> IndexAfter = detectionInFor(resultAfter, maskTmp);
     for (int i = 0; i < IndexBefore.size(); ++i) {
@@ -507,7 +518,7 @@ void imgprocess::addDetectionsWithoutWrongBoxInBkg2(Mat imgBefore, Mat imgAfter,
 vector<Detection> imgprocess::deleteBoxHighIOU(vector<Detection> detections, float iouThresh) {
     map<int, bool> indexes;
     vector<Detection> newDetection;
-    cout << "detection num =========== "<<detections.size()<<endl;
+//    cout << "detection num =========== "<<detections.size()<<endl;
     for (int i = 0; i < detections.size(); ++i) {
         indexes.insert(std::pair<int, bool>(i,true));
     }
@@ -517,7 +528,7 @@ vector<Detection> imgprocess::deleteBoxHighIOU(vector<Detection> detections, flo
             if(!indexes[j]) continue;
             if(i==j) continue;
             float iou = getIOU(detections[i].getRect(), detections[j].getRect());
-            if(iou>0) cout << " iou : " << iou<<endl;
+//            if(iou>0) cout << " iou : " << iou<<endl;
             if (iou<iouThresh) continue;
             int toDelete = detections[i].getScore()<detections[j].getScore()? i:j;
             cout << " 被删除的box："<< toDelete<< detections[toDelete].getClass() << "  "<<detections[toDelete].getRect()<<" i="<<i<<" j="<<j<<endl;
@@ -528,6 +539,6 @@ vector<Detection> imgprocess::deleteBoxHighIOU(vector<Detection> detections, flo
         if(!indexes[k]) continue;
         newDetection.push_back(detections[k]);
     }
-    cout<< " new detection num ===="<<newDetection.size()<<endl;
+//    cout<< " new detection num ===="<<newDetection.size()<<endl;
     return newDetection;
 }

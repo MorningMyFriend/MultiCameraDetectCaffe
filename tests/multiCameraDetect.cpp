@@ -128,11 +128,14 @@ map<string,int> skuDetect2(vector<Mat> imgs){
 int main(){
     // 一次传输 2n 张图像；n 个相机
     vector<Mat> imgs;
-    for (int i = 6; i < 8; i++) {
-        Mat img=imread("/home/wurui/Desktop/fugui/shot/test/shot"+std::to_string(i)+".png");
-        imgs.push_back(img);
-    }
-
+//    for (int i = 7; i < 9; i++) {
+//        Mat img=imread("/home/wurui/Desktop/fugui/shot/test/shot"+std::to_string(i)+".png");
+//        imgs.push_back(img);
+//    }
+    Mat img1 = imread("/home/wurui/Desktop/fugui/shot/test/shot10.png");
+    Mat img2 = imread("/home/wurui/Desktop/fugui/shot/test/shot12.png");
+    imgs.push_back(img1);
+    imgs.push_back(img2);
     // 入口
     string label_file = "/home/wurui/Desktop/fugui/FUGUI/predefined_classes.txt";
     string net_prototxt = "/home/wurui/Desktop/fugui/FUGUI/test.prototxt";
