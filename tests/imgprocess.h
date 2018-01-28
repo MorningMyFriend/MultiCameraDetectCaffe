@@ -11,6 +11,7 @@
 #include "detector.h"
 #include "detection.h"
 #include "math.h"
+#include <chrono>
 
 using namespace std;
 using namespace cv;

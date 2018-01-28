@@ -18,7 +18,9 @@
 #include "imgprocess.h"
 #include <map>
 #include "pthread.h"
+#include <chrono>
 
+using namespace chrono;
 using namespace std;
 
 
@@ -159,13 +161,15 @@ map<string,int> skuDetect2(vector<Mat> imgs){
         cerr<< " images num invalid "<<endl;
         exit(0);
     }
+    cout<< " time start >>>>>>>>>>>"<< endl;
+    auto time1 = system_clock::now();
     // 找图像变化的相机, 将所有变化区域的Detections
     vector<Detection> DetectionsBefore;
     vector<Detection> DetectionsAfter;
     int cameraNum = imgs.size()/2;
 //    imgprocess
     for (int i = 0; i < cameraNum; ++i) {
-        cout << " i== " << i << " img size: " << imgs[2 * i + 1].size << " imgs nums = " << imgs.size() << endl;
+//        cout << " i== " << i << " img size: " << imgs[2 * i + 1].size << " imgs nums = " << imgs.size() << endl;
         if (imgprocess::getInstance()->isDynamicCamera(imgs[2 * i], imgs[2 * i + 1])) {
             imgprocess::getInstance()->addDetectionsWithoutWrongBoxInBkg2(imgs[2 * i], imgs[2 * i + 1], DetectionsBefore,
                                                                          DetectionsAfter);
@@ -194,12 +198,21 @@ map<string,int> skuDetect2(vector<Mat> imgs){
         }
     }
 
+
+    auto time2 = system_clock::now();
+    auto duration=duration_cast<microseconds>(time2-time1);
+    cout << "time end ~~~~~"<<endl;
+    cout<<"time use===== total 8:"<<(double)(duration.count())*microseconds::period::num / microseconds::period::den<<"s"<<endl;
+    cout<<"time use===== total 8:"<<(double)(duration.count())*microseconds::period::num<<"ms"<<endl;
+    cout<<"time use===== per img:"<<(double)(duration.count())*microseconds::period::num / 8<<"ms"<<endl;
+
+//
     for (int m = 0; m < cameraNum; ++m) {
         Mat imgbefore = imread("/home/wurui/Desktop/fugui/test/resultNewBefore"+std::to_string(m)+".jpg");
         Mat imgafter = imread("/home/wurui/Desktop/fugui/test/resultNewAfter"+std::to_string(m)+".jpg");
         imshow("bofore camera:"+std::to_string(m),imgbefore);
         imshow("after camera:"+std::to_string(m),imgafter);
-        waitKey(0);
+//        waitKey(0);
     }
     cv::waitKey(0);
 };
@@ -220,11 +233,11 @@ int main(){
 //    imgs.push_back(img2);
 
     // detect video shot
-    int cameraNum = 2;
+    int cameraNum = 4;
     string videoPaths[cameraNum];
     vector<cv::VideoCapture> mycap;
     for (int i = 0; i < cameraNum; ++i) {
-        videoPaths[i] = "/home/wurui/Desktop/fugui/data/test"+std::to_string(i+2)+".avi";
+        videoPaths[i] = "/home/wurui/Desktop/fugui/data/test"+std::to_string(i)+".avi";
         cv::VideoCapture mycapi(videoPaths[i]);
         mycap.push_back(mycapi);
     }
@@ -267,7 +280,16 @@ int main(){
 
     imgprocess::getInstance()->init(label_file, net_prototxt, model_file);
     cout << "init ok ==========  "<<endl;
+
+//    cout<< " time start >>>>>>>>>>>"<< endl;
+//    auto time1 = system_clock::now();
     map<string,int> skuTaken = skuDetect2(imgs);
+//    auto time2 = system_clock::now();
+//    auto duration=duration_cast<microseconds>(time2-time1);
+//    cout << "time end ~~~~~"<<endl;
+//    cout<<"time use===== total 8:"<<(double)(duration.count())*microseconds::period::num / microseconds::period::den<<"s"<<endl;
+//    cout<<"time use===== total 8:"<<(double)(duration.count())*microseconds::period::num<<"ms"<<endl;
+//    cout<<"time use===== per img:"<<(double)(duration.count())*microseconds::period::num / 8<<"ms"<<endl;
 
     return 0;
 }

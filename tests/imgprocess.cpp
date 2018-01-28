@@ -6,6 +6,7 @@
 
 using namespace std;
 using namespace cv;
+using namespace chrono;
 
 imgprocess::imgprocess() {}
 imgprocess* imgprocess::myinstance = NULL;
@@ -119,9 +120,9 @@ bool imgprocess::isDynamicDetection(cv::Rect box, Mat mask, float scaleThresh) {
 }
 
 bool imgprocess::isDynamicCamera(Mat imgBefore, Mat imgAfter,float scaleThresh) {
-    cout << " is dynamic : ==========="<< imgAfter.size << " " << imgBefore.size  << endl;
+//    cout << " is dynamic : ==========="<< imgAfter.size << " " << imgBefore.size  << endl;
     Mat mask = this->imgDiff2(imgBefore, imgAfter);
-    cout << "mask == "<< mask.size << endl;
+//    cout << "mask == "<< mask.size << endl;
     int area = mask.cols*mask.rows;
     int count = 0;
     for (int i = 0; i < mask.cols; ++i) {
@@ -131,9 +132,9 @@ bool imgprocess::isDynamicCamera(Mat imgBefore, Mat imgAfter,float scaleThresh) 
         }
     }
     float ratio = (float)count / area;
-    cout << " ratio = "<< ratio<<endl;
+//    cout << " ratio = "<< ratio<<endl;
     if(ratio<scaleThresh){
-        cout << " scale area < thresh ================"<< endl;
+//        cout << " scale area < thresh ================"<< endl;
         return false;
     }
     cout << mask.size << " ===============mask size"<<endl;
@@ -324,7 +325,7 @@ void imgprocess::addDetectionsWithoutWrongBoxInBkg(Mat imgBefore, Mat imgAfter, 
             index_match_A[BkgIndexAfter[indexMatch]] = true;
         }
     }
-    cout << " 配对成功: 数量 = " << num<<endl;
+//    cout << " 配对成功: 数量 = " << num<<endl;
     vector<Detection> boxNotMatchB;
     vector<Detection> boxNotMatchA;
     for (int i = 0; i < resultBefore.size(); ++i) {
@@ -378,20 +379,20 @@ void imgprocess::addDetectionsWithoutWrongBoxInBkg2(Mat imgBefore, Mat imgAfter,
     // detect images
     vector<Detection> resultBefore0 = tmp_detector.detect(imgBefore,0.7,0.4);
     vector<Detection> resultAfter0 = tmp_detector.detect(imgAfter,0.7,0.4);
-    cout<< " 检测到目标数量 before:"<< resultBefore0.size() << " after:"<<resultAfter0.size()<<endl;
-    // debug 画所有检测box
-    Mat img10 = imgBefore.clone();
-    Mat img20 = imgAfter.clone();
-    tmp_detector.drawBox(img10,resultBefore0);
-    tmp_detector.drawBox(img20,resultAfter0);
+//    cout<< " 检测到目标数量 before:"<< resultBefore0.size() << " after:"<<resultAfter0.size()<<endl;
+//    // debug 画所有检测box
+//    Mat img10 = imgBefore.clone();
+//    Mat img20 = imgAfter.clone();
+//    tmp_detector.drawBox(img10,resultBefore0);
+//    tmp_detector.drawBox(img20,resultAfter0);
     Size dsize = Size(720, 480);
-    resize(img10, img10, dsize);
-    resize(img20, img20, dsize);
-    imwrite("/home/wurui/Desktop/fugui/test/resultBefore"+std::to_string(frameNum)+".jpg", img10);
-    imwrite("/home/wurui/Desktop/fugui/test/resultAfter"+std::to_string(frameNum)+".jpg", img20);
-    Mat mask = maskTmp.clone();
-    resize(mask, mask, dsize);
-    imwrite("/home/wurui/Desktop/fugui/test/maskFilter"+std::to_string(frameNum)+".jpg", mask);
+//    resize(img10, img10, dsize);
+//    resize(img20, img20, dsize);
+//    imwrite("/home/wurui/Desktop/fugui/test/resultBefore"+std::to_string(frameNum)+".jpg", img10);
+//    imwrite("/home/wurui/Desktop/fugui/test/resultAfter"+std::to_string(frameNum)+".jpg", img20);
+//    Mat mask = maskTmp.clone();
+//    resize(mask, mask, dsize);
+//    imwrite("/home/wurui/Desktop/fugui/test/maskFilter"+std::to_string(frameNum)+".jpg", mask);
 
 
     // iou 删除重叠过大的box
@@ -448,7 +449,7 @@ void imgprocess::addDetectionsWithoutWrongBoxInBkg2(Mat imgBefore, Mat imgAfter,
             index_match_A[indexMatch] = true;
         }
     }
-    cout<<"配对成功数量： "<<num<< endl;
+//    cout<<"配对成功数量： "<<num<< endl;
     vector<Detection> boxNotMatchB;
     vector<Detection> boxNotMatchA;
     for (int i = 0; i < resultBefore.size(); ++i) {
@@ -466,14 +467,14 @@ void imgprocess::addDetectionsWithoutWrongBoxInBkg2(Mat imgBefore, Mat imgAfter,
 //        detectionAfter.push_back(resultAfter[i]);//匹配成功的都加入result
     }
     // debug 画出匹配失败的box
-    Mat img11 = imgBefore.clone();
-    Mat img22 = imgAfter.clone();
-    tmp_detector.drawBox(img11,boxNotMatchB);
-    tmp_detector.drawBox(img22,boxNotMatchA);
-    resize(img11, img11, dsize);
-    resize(img22, img22, dsize);
-    imwrite("/home/wurui/Desktop/fugui/test/boxNotMatchBefore"+std::to_string(frameNum)+".jpg", img11);
-    imwrite("/home/wurui/Desktop/fugui/test/boxNotMatchAfter"+std::to_string(frameNum)+".jpg", img22);
+//    Mat img11 = imgBefore.clone();
+//    Mat img22 = imgAfter.clone();
+//    tmp_detector.drawBox(img11,boxNotMatchB);
+//    tmp_detector.drawBox(img22,boxNotMatchA);
+//    resize(img11, img11, dsize);
+//    resize(img22, img22, dsize);
+//    imwrite("/home/wurui/Desktop/fugui/test/boxNotMatchBefore"+std::to_string(frameNum)+".jpg", img11);
+//    imwrite("/home/wurui/Desktop/fugui/test/boxNotMatchAfter"+std::to_string(frameNum)+".jpg", img22);
 
     // 在匹配失败的box中： 属于变化区域的，加入result中 等待sku统计; 属于背景区域的 当作虚检忽略
     // 寻找在变化区中的box: 在result中的序号
@@ -502,15 +503,15 @@ void imgprocess::addDetectionsWithoutWrongBoxInBkg2(Mat imgBefore, Mat imgAfter,
         }
         detectionAfter.push_back(resultAfter[i]);//匹配成功的都加入result
     }
-    // debug 画出最后剩下的box
-    Mat img111 = imgBefore.clone();
-    Mat img222 = imgAfter.clone();
-    tmp_detector.drawBox(img111,boxLeftBefore);
-    tmp_detector.drawBox(img222,boxLeftAfter);
-    resize(img111, img111, dsize);
-    resize(img222, img222, dsize);
-    imwrite("/home/wurui/Desktop/fugui/test/boxLeftBefore"+std::to_string(frameNum)+".jpg", img111);
-    imwrite("/home/wurui/Desktop/fugui/test/boxLeftAfter"+std::to_string(frameNum)+".jpg", img222);
+//    // debug 画出最后剩下的box
+//    Mat img111 = imgBefore.clone();
+//    Mat img222 = imgAfter.clone();
+//    tmp_detector.drawBox(img111,boxLeftBefore);
+//    tmp_detector.drawBox(img222,boxLeftAfter);
+//    resize(img111, img111, dsize);
+//    resize(img222, img222, dsize);
+//    imwrite("/home/wurui/Desktop/fugui/test/boxLeftBefore"+std::to_string(frameNum)+".jpg", img111);
+//    imwrite("/home/wurui/Desktop/fugui/test/boxLeftAfter"+std::to_string(frameNum)+".jpg", img222);
 
     frameNum++;
 }
@@ -531,7 +532,7 @@ vector<Detection> imgprocess::deleteBoxHighIOU(vector<Detection> detections, flo
 //            if(iou>0) cout << " iou : " << iou<<endl;
             if (iou<iouThresh) continue;
             int toDelete = detections[i].getScore()<detections[j].getScore()? i:j;
-            cout << " 被删除的box："<< toDelete<< detections[toDelete].getClass() << "  "<<detections[toDelete].getRect()<<" i="<<i<<" j="<<j<<endl;
+//            cout << " 被删除的box："<< toDelete<< detections[toDelete].getClass() << "  "<<detections[toDelete].getRect()<<" i="<<i<<" j="<<j<<endl;
             indexes[toDelete]=false;
         }
     }

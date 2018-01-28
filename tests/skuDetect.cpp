@@ -18,8 +18,10 @@
 #include <map>
 #include "imgprocess.h"
 #include <map>
+#include <chrono>
 
 using namespace std;
+using namespace chrono;
 
 void detect(){
     //    // sku class
@@ -49,14 +51,23 @@ void detect(){
     tmp_detector.setComputeMode("gpu", 0);
 
 
+    auto time1=system_clock::now();
+    cout<< " time start ~~~~~"<<endl;
     for (int i = 0; i < 8; i++) {
         Mat img=imread("/home/wurui/Desktop/fugui/shot/test/shot"+std::to_string(i)+".png");
         vector<Detection> resultBefore = tmp_detector.detect(img,0.7,0.4);
-        tmp_detector.drawBox(img, resultBefore);
-        Size dsize = Size(720,480);
-        resize(img, img, dsize);
-        imwrite("/home/wurui/Desktop/fugui/shot/test/result"+std::to_string(i)+".png",img);
+//        tmp_detector.drawBox(img, resultBefore);
+//        Size dsize = Size(720,480);
+//        resize(img, img, dsize);
+//        imwrite("/home/wurui/Desktop/fugui/shot/test/result"+std::to_string(i)+".png",img);
     }
+    auto time2=system_clock::now();
+    auto duration=duration_cast<microseconds>(time2-time1);
+    cout << "time end ~~~~~"<<endl;
+    cout<<"time use===== total 8:"<<(double)(duration.count())*microseconds::period::num / microseconds::period::den<<"s"<<endl;
+    cout<<"time use===== total 8:"<<(double)(duration.count())*microseconds::period::num<<"ms"<<endl;
+    cout<<"time use===== per img:"<<(double)(duration.count())*microseconds::period::num / 8<<"ms"<<endl;
+
 }
 
 void videoShot(){
@@ -82,7 +93,8 @@ void videoShot(){
     }
 }
 int main(){
-    videoShot();
+//    videoShot();
+    detect();
     cout<< "no thing to do"<<endl;
 }
 //
