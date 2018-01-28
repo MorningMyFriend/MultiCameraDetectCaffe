@@ -193,6 +193,15 @@ map<string,int> skuDetect2(vector<Mat> imgs){
             cout << imgprocess::getInstance()->skuName[l]<<" 被拿走: "<< skuNameTaken[imgprocess::getInstance()->skuName[l]]<<endl;
         }
     }
+
+    for (int m = 0; m < cameraNum; ++m) {
+        Mat imgbefore = imread("/home/wurui/Desktop/fugui/test/resultNewBefore"+std::to_string(m)+".jpg");
+        Mat imgafter = imread("/home/wurui/Desktop/fugui/test/resultNewAfter"+std::to_string(m)+".jpg");
+        imshow("bofore camera:"+std::to_string(m),imgbefore);
+        imshow("after camera:"+std::to_string(m),imgafter);
+        waitKey(0);
+    }
+    cv::waitKey(0);
 };
 
 //int main(){
@@ -202,42 +211,53 @@ map<string,int> skuDetect2(vector<Mat> imgs){
 int main(){
     // 一次传输 2n 张图像；n 个相机
     vector<Mat> imgs;
-    vector<Mat> imgs1;
-    vector<Mat> imgs2;
+    vector<Mat> frameBefore;
+    vector<Mat> frameAfter;
+
 //    Mat img1 = imread("/home/wurui/Desktop/fugui/shot/test/shot10.png");
 //    Mat img2 = imread("/home/wurui/Desktop/fugui/shot/test/shot12.png");
 //    imgs.push_back(img1);
 //    imgs.push_back(img2);
+
     // detect video shot
-    string videoPath1 = "/home/wurui/Desktop/fugui/data/test0.avi";
-    string videoPath2 = "/home/wurui/Desktop/fugui/data/test1.avi";
-    cv::VideoCapture mycap1(videoPath1);
-    cv::VideoCapture mycap2(videoPath2);
-    if (mycap1.isOpened() && mycap2.isOpened()){
-        cout << " video ok "<< endl;
+    int cameraNum = 2;
+    string videoPaths[cameraNum];
+    vector<cv::VideoCapture> mycap;
+    for (int i = 0; i < cameraNum; ++i) {
+        videoPaths[i] = "/home/wurui/Desktop/fugui/data/test"+std::to_string(i+2)+".avi";
+        cv::VideoCapture mycapi(videoPaths[i]);
+        mycap.push_back(mycapi);
     }
 
+    cout<<"read video done"<<endl;
     int shotCount = 0;
     while (1) {
         if (shotCount>1) break;
-        cv::Mat img1,img2;
-        mycap1 >> img1;
-        mycap2 >> img2;
-        cv::imshow("video1", img1);
-        cv::imshow("video2", img2);
+        Mat frame[cameraNum];
+        for (int i = 0; i < cameraNum; ++i) {
+            Mat img;
+            mycap[i] >> img;
+            frame[i] = img;
+            imshow("video"+std::to_string(i),img);
+        }
         cv::waitKey(50);
         int key = cv::waitKey(50);
         if (key > 0) {
-            imgs1.push_back(img1);
-            imgs2.push_back(img2);
+            for (int i = 0; i < cameraNum; ++i) {
+                if (shotCount==0){
+                    frameBefore.push_back(frame[i]);
+                } else{
+                    frameAfter.push_back(frame[i]);
+                }
+            }
             shotCount++;
             cout << shotCount << " shot count " << endl;
         }
     }
-    imgs.push_back(imgs1[0]);
-    imgs.push_back(imgs1[1]);
-    imgs.push_back(imgs2[0]);
-    imgs.push_back(imgs2[1]);
+    for (int j = 0; j < cameraNum; ++j) {
+        imgs.push_back(frameBefore[j]);
+        imgs.push_back(frameAfter[j]);
+    }
     cout<< "===================detect start==================="<<endl;
 
     // 入口
