@@ -217,10 +217,6 @@ map<string,int> skuDetect2(vector<Mat> imgs){
     cv::waitKey(0);
 };
 
-//int main(){
-//    vector<Mat> images = multiCameraDetect();
-//}
-
 int main(){
     // 一次传输 2n 张图像；n 个相机
     vector<Mat> imgs;
